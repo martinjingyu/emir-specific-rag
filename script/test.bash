@@ -1,0 +1,1 @@
+CUDA_VISIBILITY_DEVICES=0 python test.py
