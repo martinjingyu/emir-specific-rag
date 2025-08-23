@@ -1,18 +1,16 @@
 from langchain.chains import RetrievalQA
 from src.llm_core import HuggingFaceChatLLM
-from src.search_engine import fetch_texts_from_search
+from src.search_engine import fetch_docs_from_search
 def build_rag_chain(llm: HuggingFaceChatLLM, retriever):
     
     def compose_prompt_fn(query):
 
         docs = retriever.invoke(query)
         
-        online_doc = fetch_texts_from_search(query)
+
         context = "\n\n".join(doc.page_content for doc in docs)
-        context = context + "\n\n" + online_doc
-        context = llm.self_refine(query, context)
-        # print(context)
-        
+        # context = llm.self_refine(query, context)
+
         prompt = llm.compose_prompt(context=context, query=query)
         return prompt
 

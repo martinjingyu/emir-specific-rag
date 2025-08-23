@@ -1,6 +1,6 @@
 from openai import AzureOpenAI
 import yaml
-with open("config/api.yaml", "r") as f:
+with open("src/config/api.yaml", "r") as f:
     config = yaml.safe_load(f)
 api_base = config['azure']['api_base']
 api_key = config['azure']['api_key']

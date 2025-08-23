@@ -14,8 +14,9 @@ class HuggingFaceChatLLM:
         )
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
-            model_max_length=2048
+            model_max_length=4096
         )
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         
     def _call(self, input_ids) -> str:
 
@@ -27,12 +28,13 @@ class HuggingFaceChatLLM:
 
     def compose_prompt(self, context: str, query: str) -> str:
         messages = [
-            {"role": "system", "content": f"You are a helpful assistant in financial area."},
-            {"role": "user", "content":f"Here are some information you might be able to use:\n{context}. \nHere is the question:\n{query}"}
+            {"role": "system", "content": f"You are a helpful assistant in financial area. You should read the extra information and determine whether the information is useful to answer the question. If it is useful, use the information to help you answer the question. If it is not useful, just answer the question based on your own knowledge. Remember you are a financial expert, so all the questions are related to finance. And you should choose the most relevant information to answer the question. If you don't know the answer, just say that you don't know, don't try to make up an answer."},
+            {"role": "user", "content":f"Here are the extra information:\n{context}. \nHere is the question:\n{query}"}
         ]
         return self.tokenizer.apply_chat_template([messages], tokenize=True, add_generation_prompt=True, return_tensors="pt").to("cuda")
     
     def generate(self, query: str) -> str:
+        
         messages = [
             {"role": "system", "content": "You are a helpful assistant in financial area."},
             {"role": "user", "content": query}]
@@ -40,6 +42,7 @@ class HuggingFaceChatLLM:
         
         response = self._call(input_ids)
         return response
+    
     def self_refine(self, query: str, context: str) -> str:
         retriever_system_prompt = """
         You are the retriever component of a Retrieval-Augmented Generation (RAG) system.
@@ -55,7 +58,7 @@ class HuggingFaceChatLLM:
             {"role": "user", "content": query}]
         
         messages = [quiry_for_retrieve, quiry]
-        input_ids = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to("cuda")
+        input_ids = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt",padding=True).to("cuda")
 
         output_ids = self.model.generate(input_ids)
         
