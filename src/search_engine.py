@@ -31,7 +31,7 @@ def fetch_docs_from_search(query):
 
 
 def fetch_result_description(query):
-    query = urllib.parse.quote("Finance "+query)
+    query = urllib.parse.quote("In EMIR, "+query)
     search_url = f"https://www.google.com/search?q={query}&brd_json=1"
     
     response = requests.post(

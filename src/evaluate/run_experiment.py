@@ -99,7 +99,7 @@ def evaluate():
         
         groundTrue = str(row.get("answers", "")).strip()
         
-        question = "What is " + str(row.get("abbreviations", "")).strip()+ "?"
+        question = "What is " + str(row.iloc[0]).strip()+ "?"
         
         response = judge.forward(f"Question: {question}\n GroundTrue: {groundTrue}\n Answer: {answer}")
         

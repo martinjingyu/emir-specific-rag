@@ -20,7 +20,7 @@ class HuggingFaceChatLLM:
         
     def _call(self, input_ids) -> str:
 
-        output_ids = self.model.generate(input_ids)
+        output_ids = self.model.generate(input_ids,max_new_tokens=2048, do_sample=True, top_p=0.7)
         generated_ids = output_ids[0][input_ids.shape[-1]:]
 
         response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
