@@ -1,9 +1,9 @@
 azure:
-  api_key: ebaac1dda467451e90addf2c86afb68a
-  api_base: https://xiaogeng-east.openai.azure.com/
-  api_version: 2024-05-01-preview
-  deployment_name: gpt-4o-mini-2024-07-18
+  api_key: 
+  api_base: 
+  api_version: 
+  deployment_name: 
 
 brightdata:
-  api_key: 4caa0e3536f0f980f280c5c52cc1f4e9d23766db882627981428409726049087
-  zone: serp_api1
+  api_key: 
+  zone: 
