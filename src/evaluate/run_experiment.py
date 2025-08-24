@@ -42,12 +42,18 @@ parser.add_argument(
     default=True,
     help="Whether to use RAG (True or False)"
 )
+parser.add_argument(
+    "--whether_online",
+    type=str2bool,
+    default=False,
+    help="Whether to run the agent online (True or False)"
+)
 
 args = parser.parse_args()
 
 def main():
     
-    agent = RAGAgent(model_name=args.model_core)
+    agent = RAGAgent(model_name=args.model_core,whether_online=True)
     if (os.path.exists(args.output_path)):
         question_path = args.output_path
     else:
@@ -93,7 +99,7 @@ def evaluate():
         
         groundTrue = str(row.get("answers", "")).strip()
         
-        question = "What is " + str(row.get("abbreviations", "")).strip()+ "?"
+        question = "What is " + str(row.iloc[0]).strip()+ "?"
         
         response = judge.forward(f"Question: {question}\n GroundTrue: {groundTrue}\n Answer: {answer}")
         

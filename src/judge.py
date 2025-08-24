@@ -1,8 +1,11 @@
 from openai import AzureOpenAI
-api_base = ""
-api_key = ""
-api_version = ""
-deployment_name = ""
+import yaml
+with open("src/config/api.yaml", "r") as f:
+    config = yaml.safe_load(f)
+api_base = config['azure']['api_base']
+api_key = config['azure']['api_key']
+api_version = config['azure']['api_version']
+deployment_name = config['azure']['deployment_name']
 
 class Judge:
     def __init__(self):

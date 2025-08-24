@@ -5,10 +5,14 @@ from langchain_community.document_loaders import PyPDFLoader
 
 import pandas as pd
 import os
+import json
 
 def build_faiss_index(docs, embedder, save_path="src/knowledgebase/index/"):
     vectorstore = FAISS.from_documents(docs, embedder)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     vectorstore.save_local(save_path)
+    print(f"FAISS index saved to {save_path}")
 
 def load_faiss_index(embedder, path="src/knowledgebase/index/"):
     
@@ -55,4 +59,19 @@ def load_pdfs_to_documents(folder_path="src/knowledgebase/pdf"):
                     },
                 )
             )
+    return docs
+
+def load_online_documents():
+    docs = []
+    folder_path = "src/knowledgebase/online"
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".json"):
+            file_path = os.path.join(folder_path, filename)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for item in data:
+                    content = item.get("description", "")
+                    
+                    title = item.get("title", filename)
+                    docs.append(Document(page_content=title+" : "+content, metadata={"title": title}))
     return docs

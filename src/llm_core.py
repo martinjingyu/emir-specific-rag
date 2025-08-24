@@ -14,18 +14,13 @@ class HuggingFaceChatLLM:
         )
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
-            model_max_length=2048
+            model_max_length=4096
         )
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         
-
-    @property
-    def _llm_type(self) -> str:
-        return "custom-huggingface-chat"
-
-
     def _call(self, input_ids) -> str:
 
-        output_ids = self.model.generate(input_ids)
+        output_ids = self.model.generate(input_ids,max_new_tokens=2048, do_sample=True, top_p=0.7)
         generated_ids = output_ids[0][input_ids.shape[-1]:]
 
         response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
@@ -33,12 +28,13 @@ class HuggingFaceChatLLM:
 
     def compose_prompt(self, context: str, query: str) -> str:
         messages = [
-            {"role": "system", "content": f"You are a helpful assistant in financial area."},
-            {"role": "user", "content":f"Here are some information you might be able to use:\n{context}. \nHere is the question:\n{query}"}
+            {"role": "system", "content": f"You are a helpful assistant in financial area. You should read the extra information and determine whether the information is useful to answer the question. If it is useful, use the information to help you answer the question. If it is not useful, just answer the question based on your own knowledge. Remember you are a financial expert, so all the questions are related to finance. And you should choose the most relevant information to answer the question. If you don't know the answer, just say that you don't know, don't try to make up an answer."},
+            {"role": "user", "content":f"Here are the extra information:\n{context}. \nHere is the question:\n{query}"}
         ]
         return self.tokenizer.apply_chat_template([messages], tokenize=True, add_generation_prompt=True, return_tensors="pt").to("cuda")
     
     def generate(self, query: str) -> str:
+        
         messages = [
             {"role": "system", "content": "You are a helpful assistant in financial area."},
             {"role": "user", "content": query}]
@@ -46,7 +42,39 @@ class HuggingFaceChatLLM:
         
         response = self._call(input_ids)
         return response
+    
+    def self_refine(self, query: str, context: str) -> str:
+        retriever_system_prompt = """
+        You are the retriever component of a Retrieval-Augmented Generation (RAG) system.
+        Given a user question and a context, your task is to determine whether the context contains information that is relevant to answering the question.
+            •	If relevant information exists, extract or point to the relevant parts.
+            •	If no relevant information is present, respond with: “No relevant information found.”
+        Be precise and avoid assuming facts not supported by the context."""
+        quiry_for_retrieve = [{"role": "system", "content": retriever_system_prompt},
+                              {"role": "user", "content": f"Here is the question: {query}\nHere is the context: {context}"}]
+        
+        quiry = [
+            {"role": "system", "content": "You are a helpful assistant in financial area."},
+            {"role": "user", "content": query}]
+        
+        messages = [quiry_for_retrieve, quiry]
+        input_ids = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt",padding=True).to("cuda")
 
+        output_ids = self.model.generate(input_ids)
+        
+        output_list = []
+        for i in range(len(output_ids)):
+            
+            generated_ids = output_ids[i][input_ids[i].shape[-1]:]
+
+            response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+            output_list.append(response)
+        
+        if "no relevant information found" in output_list[0].lower():
+            return output_list[1]
+        else:
+            return output_list[0]
+    
 
 def load_model_pipeline(model_name="meta-llama/Llama-2-7b-chat-hf"):
 
